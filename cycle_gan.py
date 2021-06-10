@@ -23,6 +23,7 @@ import pickle
 import argparse
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 # Torch imports
@@ -40,6 +41,7 @@ import utils
 from data_loader import get_emoji_loader
 from models import CycleGenerator, DCDiscriminator
 
+device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
 SEED = 11
 
@@ -143,12 +145,12 @@ def merge_images(sources, targets, opts, k=10):
     """
     _, _, h, w = sources.shape
     row = int(np.sqrt(opts.batch_size))
-    merged = np.zeros([3, row*h, row*w*2])
+    merged = np.zeros([3, row * h, row * w * 2])
     for idx, (s, t) in enumerate(zip(sources, targets)):
         i = idx // row
         j = idx % row
-        merged[:, i*h:(i+1)*h, (j*2)*h:(j*2+1)*h] = s
-        merged[:, i*h:(i+1)*h, (j*2+1)*h:(j*2+2)*h] = t
+        merged[:, i * h:(i + 1) * h, (j * 2) * h:(j * 2 + 1) * h] = s
+        merged[:, i * h:(i + 1) * h, (j * 2 + 1) * h:(j * 2 + 2) * h] = t
     return merged.transpose(1, 2, 0)
 
 
@@ -177,7 +179,6 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         * Saves checkpoint every opts.checkpoint_every iterations
         * Saves generated samples every opts.sample_every iterations
     """
-
     # Create generators and discriminators
     if opts.load:
         G_XtoY, G_YtoX, D_X, D_Y = load_checkpoint(opts)
@@ -186,7 +187,6 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
 
     g_params = list(G_XtoY.parameters()) + list(G_YtoX.parameters())  # Get generator parameters
     d_params = list(D_X.parameters()) + list(D_Y.parameters())  # Get discriminator parameters
-
     # Create optimizers for the generators and discriminators
     g_optimizer = optim.Adam(g_params, opts.lr, [opts.beta1, opts.beta2])
     d_optimizer = optim.Adam(d_params, opts.lr, [opts.beta1, opts.beta2])
@@ -204,7 +204,13 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
 
     iter_per_epoch = min(len(iter_X), len(iter_Y))
 
-    for iteration in range(1, opts.train_iters+1):
+    criterion = nn.MSELoss()
+    real_label = 1
+    fake_label = 0
+
+    ttl_g_loss, ttl_d_loss = [], []
+
+    for iteration in range(1, opts.train_iters + 1):
 
         # Reset data_iter for each epoch
         if iteration % iter_per_epoch == 0:
@@ -217,7 +223,6 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         images_Y, labels_Y = iter_Y.next()
         images_Y, labels_Y = utils.to_var(images_Y), utils.to_var(labels_Y).long().squeeze()
 
-
         # ============================================
         #            TRAIN THE DISCRIMINATORS
         # ============================================
@@ -229,9 +234,21 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         # Train with real images
         d_optimizer.zero_grad()
 
+        real_labels_X = torch.full((images_X.size(0),), real_label, device=device)
+        real_labels_Y = torch.full((images_Y.size(0),), real_label, device=device)
+        fake_labels_X = torch.full((images_X.size(0),), fake_label, device=device)
+        fake_labels_Y = torch.full((images_Y.size(0),), fake_label, device=device)
+
         # 1. Compute the discriminator losses on real images
-        # D_X_loss = ...
-        # D_Y_loss = ...
+        if opts.loss_fn == 'div':
+            D_X_loss = ((D_X(images_X) - 1) ** 2).sum() / len(images_X)
+            D_Y_loss = ((D_Y(images_Y) - 1) ** 2).sum() / len(images_Y)
+        elif opts.loss_fn == 'torch_mean':
+            D_X_loss = torch.mean((D_X(images_X) - 1) ** 2)
+            D_Y_loss = torch.mean((D_Y(images_Y) - 1) ** 2)
+        elif opts.loss_fn == 'criterion':
+            D_X_loss = criterion(D_X(images_X), real_labels_X.float())
+            D_Y_loss = criterion(D_Y(images_Y), real_labels_Y.float())
 
         d_real_loss = D_X_loss + D_Y_loss
         d_real_loss.backward()
@@ -241,27 +258,34 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         d_optimizer.zero_grad()
 
         # 2. Generate fake images that look like domain X based on real images in domain Y
-        # fake_X = ...
+        fake_X = G_YtoX(images_Y)
 
         # 3. Compute the loss for D_X
-        # D_X_loss = ...
+        if opts.loss_fn == 'div':
+            D_X_loss = (D_X(fake_X) ** 2).sum() / len(fake_X)
+        elif opts.loss_fn == 'torch_mean':
+            D_X_loss = torch.mean((D_X(fake_X)) ** 2)
+        elif opts.loss_fn == 'criterion':
+            D_X_loss = criterion(D_X(fake_X), fake_labels_Y.float())
 
         # 4. Generate fake images that look like domain Y based on real images in domain X
-        # fake_Y = ...
+        fake_Y = G_XtoY(images_X)
 
         # 5. Compute the loss for D_Y
-        # D_Y_loss = ...
+        if opts.loss_fn == 'div':
+            D_Y_loss = (D_Y(fake_Y) ** 2).sum() / len(fake_Y)
+        elif opts.loss_fn == 'torch_mean':
+            D_Y_loss = torch.mean((D_Y(fake_Y)) ** 2)
+        elif opts.loss_fn == 'criterion':
+            D_Y_loss = criterion(D_Y(fake_Y), fake_labels_X.float())
 
         d_fake_loss = D_X_loss + D_Y_loss
         d_fake_loss.backward()
         d_optimizer.step()
 
-
-
         # =========================================
         #            TRAIN THE GENERATORS
         # =========================================
-
 
         #########################################
         ##    FILL THIS IN: Y--X-->Y CYCLE     ##
@@ -269,21 +293,29 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         g_optimizer.zero_grad()
 
         # 1. Generate fake images that look like domain X based on real images in domain Y
-        # fake_X = ...
+        fake_X = G_YtoX(images_Y)
 
         # 2. Compute the generator loss based on domain X
-        # g_loss = ...
+        if opts.loss_fn == 'div':
+            g_loss = ((D_X(fake_X) - 1) ** 2).sum() / len(fake_X)
+        elif opts.loss_fn == 'torch_mean':
+            g_loss = torch.mean((D_X(fake_X) - 1) ** 2)
+        elif opts.loss_fn == 'criterion':
+            g_loss = criterion(D_X(fake_X), real_labels_Y.float())
 
         if opts.use_cycle_consistency_loss:
             reconstructed_Y = G_XtoY(fake_X)
             # 3. Compute the cycle consistency loss (the reconstruction loss)
-            # cycle_consistency_loss = ...
+            if opts.loss_fn == 'div':
+                cycle_consistency_loss = ((images_Y - reconstructed_Y) ** 2).sum() / len(images_Y)
+            elif opts.loss_fn == 'torch_mean':
+                cycle_consistency_loss = torch.mean((images_Y - reconstructed_Y) ** 2)
+            elif opts.loss_fn == 'criterion':
+                cycle_consistency_loss = criterion(reconstructed_Y, images_Y.float())
             g_loss += cycle_consistency_loss
 
         g_loss.backward()
         g_optimizer.step()
-
-
 
         #########################################
         ##    FILL THIS IN: X--Y-->X CYCLE     ##
@@ -292,33 +324,43 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         g_optimizer.zero_grad()
 
         # 1. Generate fake images that look like domain Y based on real images in domain X
-        # fake_Y = ...
+        fake_Y = G_XtoY(images_X)
 
         # 2. Compute the generator loss based on domain Y
-        # g_loss = ...
+        if opts.loss_fn == 'div':
+            g_loss = ((D_Y(fake_Y) - 1) ** 2).sum() / len(fake_Y)
+        elif opts.loss_fn == 'torch_mean':
+            g_loss = torch.mean((D_Y(fake_Y) - 1) ** 2)
+        elif opts.loss_fn == 'criterion':
+            g_loss = criterion(D_Y(fake_Y), real_labels_X.float())
 
         if opts.use_cycle_consistency_loss:
             reconstructed_X = G_YtoX(fake_Y)
             # 3. Compute the cycle consistency loss (the reconstruction loss)
-            # cycle_consistency_loss = ...
+            if opts.loss_fn == 'div':
+                cycle_consistency_loss = ((images_X - reconstructed_X) ** 2).sum() / len(images_X)
+            elif opts.loss_fn == 'torch_mean':
+                cycle_consistency_loss = torch.mean((images_X - reconstructed_X) ** 2)
+            elif opts.loss_fn == 'criterion':
+                cycle_consistency_loss = criterion(reconstructed_X, images_X.float())
             g_loss += cycle_consistency_loss
 
         g_loss.backward()
         g_optimizer.step()
 
+        ttl_d_loss.append(d_real_loss.item() + D_Y_loss.item() + D_X_loss.item() + d_fake_loss.item())
+        ttl_g_loss.append(g_loss.item())
 
         # Print the log info
         if iteration % opts.log_step == 0:
             print('Iteration [{:5d}/{:5d}] | d_real_loss: {:6.4f} | d_Y_loss: {:6.4f} | d_X_loss: {:6.4f} | '
                   'd_fake_loss: {:6.4f} | g_loss: {:6.4f}'.format(
-                    iteration, opts.train_iters, d_real_loss.data[0], D_Y_loss.data[0],
-                    D_X_loss.data[0], d_fake_loss.data[0], g_loss.data[0]))
-
+                iteration, opts.train_iters, d_real_loss.data, D_Y_loss.data,
+                D_X_loss.data, d_fake_loss.data, g_loss.data))
 
         # Save the generated samples
         if iteration % opts.sample_every == 0:
             save_samples(iteration, fixed_Y, fixed_X, G_YtoX, G_XtoY, opts)
-
 
         # Save the model parameters
         if iteration % opts.checkpoint_every == 0:
@@ -362,11 +404,16 @@ def create_parser():
     parser.add_argument('--image_size', type=int, default=32, help='The side length N to convert images to NxN.')
     parser.add_argument('--g_conv_dim', type=int, default=32)
     parser.add_argument('--d_conv_dim', type=int, default=32)
-    parser.add_argument('--use_cycle_consistency_loss', action='store_true', default=False, help='Choose whether to include the cycle consistency term in the loss.')
-    parser.add_argument('--init_zero_weights', action='store_true', default=False, help='Choose whether to initialize the generator conv weights to 0 (implements the identity function).')
+    parser.add_argument('--use_cycle_consistency_loss', action='store_true', default=False,
+                        help='Choose whether to include the cycle consistency term in the loss.')
+    parser.add_argument('--loss_fn', type=str, default='criterion', choices=['criterion', 'torch_mean', 'div'],
+                        help='Choose loss function')
+    parser.add_argument('--init_zero_weights', action='store_true', default=False,
+                        help='Choose whether to initialize the generator conv weights to 0 (implements the identity function).')
 
     # Training hyper-parameters
-    parser.add_argument('--train_iters', type=int, default=600, help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
+    parser.add_argument('--train_iters', type=int, default=600,
+                        help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
     parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
     parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
@@ -374,16 +421,18 @@ def create_parser():
     parser.add_argument('--beta2', type=float, default=0.999)
 
     # Data sources
-    parser.add_argument('--X', type=str, default='Apple', choices=['Apple', 'Windows'], help='Choose the type of images for domain X.')
-    parser.add_argument('--Y', type=str, default='Windows', choices=['Apple', 'Windows'], help='Choose the type of images for domain Y.')
+    parser.add_argument('--X', type=str, default='Apple', choices=['Apple', 'Windows'],
+                        help='Choose the type of images for domain X.')
+    parser.add_argument('--Y', type=str, default='Windows', choices=['Apple', 'Windows'],
+                        help='Choose the type of images for domain Y.')
 
     # Saving directories and checkpoint/sample iterations
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints_cyclegan')
     parser.add_argument('--sample_dir', type=str, default='samples_cyclegan')
     parser.add_argument('--load', type=str, default=None)
-    parser.add_argument('--log_step', type=int , default=10)
-    parser.add_argument('--sample_every', type=int , default=100)
-    parser.add_argument('--checkpoint_every', type=int , default=800)
+    parser.add_argument('--log_step', type=int, default=10)
+    parser.add_argument('--sample_every', type=int, default=100)
+    parser.add_argument('--checkpoint_every', type=int, default=800)
 
     return parser
 

@@ -49,18 +49,21 @@ class DCGenerator(nn.Module):
         ##   FILL THIS IN: CREATE ARCHITECTURE   ##
         ###########################################
 
-        # self.deconv1 = deconv(...)
-        # self.deconv2 = deconv(...)
-        # self.deconv3 = deconv(...)
-        # self.deconv4 = deconv(...)
+        self.deconv1 = deconv(in_channels=noise_size, out_channels=conv_dim*4,
+                              kernel_size=4, stride=1, padding=0, batch_norm=True) # stride = 1 == stride =2
+        self.deconv2 = deconv(in_channels=conv_dim*4, out_channels=conv_dim*2,
+                              kernel_size=4, stride=2, padding=1, batch_norm=True)
+        self.deconv3 = deconv(in_channels=conv_dim*2, out_channels=conv_dim,
+                              kernel_size=4, stride=2, padding=1, batch_norm=True)
+        self.deconv4 = deconv(in_channels=conv_dim, out_channels=3,
+                              kernel_size=4, stride=2, padding=1, batch_norm=False)
+
 
     def forward(self, z):
         """Generates an image given a sample of random noise.
-
             Input
             -----
                 z: BS x noise_size x 1 x 1   -->  16x100x1x1
-
             Output
             ------
                 out: BS x channels x image_width x image_height  -->  16x3x32x32
@@ -95,23 +98,25 @@ class CycleGenerator(nn.Module):
         ###########################################
 
         # 1. Define the encoder part of the generator (that extracts features from the input image)
-        # self.conv1 = conv(...)
-        # self.conv2 = conv(...)
+        self.conv1 = conv(in_channels=3, out_channels=conv_dim, kernel_size=4, stride=2, padding=1,
+                          batch_norm=True, init_zero_weights=init_zero_weights)
+        self.conv2 = conv(in_channels=conv_dim, out_channels=conv_dim*2, kernel_size=4, stride=2, padding=1,
+                          batch_norm=True, init_zero_weights=init_zero_weights)
 
         # 2. Define the transformation part of the generator
-        # self.resnet_block = ...
+        self.resnet_block = ResnetBlock(conv_dim*2)
 
         # 3. Define the decoder part of the generator (that builds up the output image from features)
-        # self.deconv1 = deconv(...)
-        # self.deconv2 = deconv(...)
+        self.deconv1 = deconv(in_channels=conv_dim*2, out_channels=conv_dim, kernel_size=4,
+                              stride=2, padding=1, batch_norm=True)
+        self.deconv2 = deconv(in_channels=conv_dim, out_channels=3, kernel_size=4,
+                              stride=2, padding=1, batch_norm=False)
 
     def forward(self, x):
         """Generates an image conditioned on an input image.
-
             Input
             -----
                 x: BS x 3 x 32 x 32
-
             Output
             ------
                 out: BS x 3 x 32 x 32
@@ -139,10 +144,14 @@ class DCDiscriminator(nn.Module):
         ##   FILL THIS IN: CREATE ARCHITECTURE   ##
         ###########################################
 
-        # self.conv1 = conv(...)
-        # self.conv2 = conv(...)
-        # self.conv3 = conv(...)
-        # self.conv4 = conv(...)
+        self.conv1 = conv(in_channels=3, out_channels=conv_dim, kernel_size=4, stride=2, padding=1,
+                          batch_norm=True, init_zero_weights=False)
+        self.conv2 = conv(in_channels=conv_dim, out_channels=conv_dim*2, kernel_size=4, stride=2,
+                          padding=1, batch_norm=True, init_zero_weights=False)
+        self.conv3 = conv(in_channels=conv_dim*2, out_channels=conv_dim*4, kernel_size=4, stride=2,
+                          padding=1, batch_norm=True, init_zero_weights=False)
+        self.conv4 = conv(in_channels=conv_dim*4, out_channels=1, kernel_size=4, stride=1, padding=0,
+                          batch_norm=False, init_zero_weights=False) # stride = 1 == stride =2
 
     def forward(self, x):
 
