@@ -42,7 +42,7 @@ def extract_edge(frame):
     edge = edge[0, 0]
     edge = cv.resize(edge, (frame.shape[1], frame.shape[0]))
     edge = cv.merge([edge, edge, edge])
-    frame = frame * edge
+    frame = frame/2 + frame/2 * edge
     return frame
 
 

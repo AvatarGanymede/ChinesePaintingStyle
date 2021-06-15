@@ -16,10 +16,10 @@ def get_transform(method=Image.BICUBIC):
     osize = [opt['load_size'], opt['load_size']]
     transform_list.append(transforms.Resize(osize, method))
     # crop
-    transform_list.append(transforms.RandomCrop(opt['crop_size']))
+    transform_list.append(transforms.CenterCrop(opt['crop_size']))
 
     # flip
-    transform_list.append(transforms.RandomHorizontalFlip())
+    # transform_list.append(transforms.RandomHorizontalFlip())
 
     # convert
     transform_list += [transforms.ToTensor()]

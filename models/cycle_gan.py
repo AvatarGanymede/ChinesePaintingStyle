@@ -166,6 +166,17 @@ class CycleGANModel:
         self.backward_D_B()  # calculate graidents for D_B
         self.optimizer_D.step()  # update D_A and D_B's weights
 
+    def optimize_D_parameters(self):
+        """Calculate losses, gradients, and update D network weights"""
+        # forward
+        self.forward()  # compute fake images and reconstruction images.
+        # D_A and D_B
+        self.set_requires_grad([self.netD_A, self.netD_B], True)
+        self.optimizer_D.zero_grad()  # set D_A and D_B's gradients to zero
+        self.backward_D_A()  # calculate gradients for D_A
+        self.backward_D_B()  # calculate graidents for D_B
+        self.optimizer_D.step()  # update D_A and D_B's weights
+
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
         Parameters:
@@ -295,3 +306,17 @@ class CycleGANModel:
             if isinstance(name, str):
                 visual_ret[name] = getattr(self, name)
         return visual_ret
+
+    def test(self):
+        """Forward function used in test time.
+
+        This function wraps <forward> function in no_grad() so we don't save intermediate steps for backprop
+        It also calls <compute_visuals> to produce additional visualization results
+        """
+        with torch.no_grad():
+            self.forward()
+            self.compute_visuals()
+
+    def get_image_paths(self):
+        """ Return image paths that are used to load current data"""
+        return self.image_paths

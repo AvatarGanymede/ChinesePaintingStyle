@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>958</width>
+    <height>535</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="background">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>960</width>
+      <height>540</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-image: url(:/pic/imgs/bg.png);</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="org_image">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>110</y>
+      <width>320</width>
+      <height>320</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-width: 5px;
+border-style: solid;
+border-color: rgb(192, 72, 81);</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="after_image">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>110</y>
+      <width>320</width>
+      <height>320</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border-width: 5px;
+border-style: solid;
+border-color: rgb(192, 72, 81);</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="transfer">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>290</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton{
+font: 32pt &quot;方正字迹-周崇谦小篆繁体&quot;;
+color: rgb(192, 72, 81);
+background-color:transparent;
+}
+QPushButton:hover{
+color: #f9f1db;
+}</string>
+    </property>
+    <property name="text">
+     <string>转化</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="OIMG">
+    <property name="geometry">
+     <rect>
+      <x>190</x>
+      <y>70</y>
+      <width>81</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 32pt &quot;方正字迹-周崇谦小篆繁体&quot;;
+color: rgb(192, 72, 81);</string>
+    </property>
+    <property name="text">
+     <string>原图</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="AIMG">
+    <property name="geometry">
+     <rect>
+      <x>680</x>
+      <y>70</y>
+      <width>81</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 32pt &quot;方正字迹-周崇谦小篆繁体&quot;;
+color: rgb(192, 72, 81);</string>
+    </property>
+    <property name="text">
+     <string>国画</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="open">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>190</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton{
+font: 32pt &quot;方正字迹-周崇谦小篆繁体&quot;;
+color: rgb(192, 72, 81);
+background-color:transparent;
+}
+QPushButton:hover{
+color: #f9f1db;
+}</string>
+    </property>
+    <property name="text">
+     <string>打开</string>
+    </property>
+   </widget>
+   <widget class="QProgressBar" name="progressBar">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>460</y>
+      <width>321</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QProgressBar {
+    border: 2px solid grey;
+    border-radius: 5px;
+	border-color: #c04851;
+	text-align: center;
+	font: 75 12pt &quot;黑体-简&quot;;
+	color: #b78d12;
+}
+
+QProgressBar::chunk {
+    background-color: #c04851;
+    width: 20px;
+}</string>
+    </property>
+    <property name="value">
+     <number>24</number>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pause">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>450</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton{
+font: 32pt &quot;方正字迹-周崇谦小篆繁体&quot;;
+color: rgb(192, 72, 81);
+background-color:transparent;
+}
+QPushButton:hover{
+color: #f9f1db;
+}</string>
+    </property>
+    <property name="text">
+     <string>暂停</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="play">
+    <property name="geometry">
+     <rect>
+      <x>780</x>
+      <y>450</y>
+      <width>101</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton{
+font: 32pt &quot;方正字迹-周崇谦小篆繁体&quot;;
+color: rgb(192, 72, 81);
+background-color:transparent;
+}
+QPushButton:hover{
+color: #f9f1db;
+}</string>
+    </property>
+    <property name="text">
+     <string>播放</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources>
+  <include location="source.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>open</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Open()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>486</x>
+     <y>210</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>495</x>
+     <y>-17</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>transfer</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Transfer()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>483</x>
+     <y>308</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>505</x>
+     <y>580</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pause</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Pause()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>631</x>
+     <y>469</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>636</x>
+     <y>582</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>play</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>Play()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>822</x>
+     <y>469</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>831</x>
+     <y>570</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>Open()</slot>
+  <slot>Transfer()</slot>
+  <slot>Pause()</slot>
+  <slot>Play()</slot>
+ </slots>
+</ui>

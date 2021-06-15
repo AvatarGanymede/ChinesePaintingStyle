@@ -15,7 +15,7 @@ opt = dict( load_size=286,          # scale images to this size
             pool_size=50,           # the size of image buffer that stores previously generated images
             lr=0.0002,              # initial learning rate for adam
             beta1=0.5,              # momentum term of adam
-            display_id=1,           # window id of the web display
+            display_id=-1,           # window id of the web display
             no_html=False,
             display_winsize=256,    # display window size for both visdom and HTML
             name='Chinese Painting Style',
@@ -39,5 +39,13 @@ opt = dict( load_size=286,          # scale images to this size
             update_html_freq=1000,  # frequency of saving training results to html
             save_latest_freq=5000,
             save_by_iter=False,
-            save_epoch_freq=5
+            save_epoch_freq=5,
+
+            n_epochs_D=2,
+
+            results_dir='./results/',
+            phase='test',
+            num_test=500,
+            aspect_ratio=1.0,
+
            )
