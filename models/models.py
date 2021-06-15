@@ -3,12 +3,13 @@ import torch.nn as nn
 from torch.nn import init
 import functools
 from torch.optim import lr_scheduler
+from utils.params import opt
 
 
 def init_net(net, init_gain=0.02, gpu_ids=[]):
     # init net
     if len(gpu_ids) > 0:
-        assert(torch.cuda.is_available())
+        assert (torch.cuda.is_available())
         net.to(gpu_ids[0])
         net = torch.nn.DataParallel(net, gpu_ids)  # multi-GPUs
 
@@ -17,9 +18,11 @@ def init_net(net, init_gain=0.02, gpu_ids=[]):
         classname = m.__class__.__name__
         if hasattr(m, 'weight') and (classname.find('Conv') != -1 or classname.find('Linear') != -1):
             init.normal_(m.weight.data, 0.0, init_gain)
-        elif classname.find('BatchNorm2d') != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
+        elif classname.find(
+                'BatchNorm2d') != -1:  # BatchNorm Layer's weight is not a matrix; only normal distribution applies.
             init.normal_(m.weight.data, 1.0, init_gain)
             init.constant_(m.bias.data, 0.0)
+
     net.apply(init_func)
     return net
 
@@ -221,7 +224,8 @@ class NLayerDiscriminator(nn.Module):
             nn.LeakyReLU(0.2, True)
         ]
 
-        sequence += [nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
+        sequence += [
+            nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw)]  # output 1 channel prediction map
         self.model = nn.Sequential(*sequence)
 
     def forward(self, input):
@@ -229,7 +233,7 @@ class NLayerDiscriminator(nn.Module):
         return self.model(input)
 
 
-def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal', init_gain=0.02, gpu_ids=[]):
+def define_D(input_nc, ndf, n_layers_D=3, init_gain=0.02, gpu_ids=[]):
     """Create a discriminator
 
     Parameters:
@@ -265,3 +269,12 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     net = NLayerDiscriminator(input_nc, ndf, n_layers_D, norm_layer=norm_layer)
     # init net
     return init_net(net, init_gain, gpu_ids)
+
+
+def get_scheduler(optimizer):
+    def lambda_rule(epoch):
+        lr_l = 1.0 - max(0, epoch + opt['epoch_count'] - opt['n_epochs']) / float(opt['n_epochs_decay'] + 1)
+        return lr_l
+
+    scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
+    return scheduler
