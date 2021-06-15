@@ -1,10 +1,49 @@
 import os
 from PIL import Image
 import random
-from utils import make_dataset, get_transform
+import torchvision.transforms as transforms
+from utils.params import opt
+IMG_EXTENSIONS = [
+    '.jpg', '.JPG', '.jpeg', '.JPEG',
+    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+    '.tif', '.TIF', '.tiff', '.TIFF',
+]
 
 
-class UnalignedDataset:
+def get_transform(method=Image.BICUBIC):
+    transform_list = []
+    # resize
+    osize = [opt['load_size'], opt['load_size']]
+    transform_list.append(transforms.Resize(osize, method))
+    # crop
+    transform_list.append(transforms.RandomCrop(opt['crop_size']))
+
+    # flip
+    transform_list.append(transforms.RandomHorizontalFlip())
+
+    # convert
+    transform_list += [transforms.ToTensor()]
+    transform_list += [transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
+    return transforms.Compose(transform_list)
+
+
+def is_image_file(filename):
+    return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
+
+def make_dataset(_dir, max_dataset_size=float("inf")):
+    images = []
+    assert os.path.isdir(_dir), '%s is not a valid directory' % _dir
+
+    for root, _, fnames in sorted(os.walk(_dir)):
+        for fname in fnames:
+            if is_image_file(fname):
+                path = os.path.join(root, fname)
+                images.append(path)
+    return images[:min(max_dataset_size, len(images))]
+
+
+class Dataset:
     """
     This dataset class can load unaligned/unpaired datasets.
 
@@ -16,20 +55,13 @@ class UnalignedDataset:
     """
 
     def __init__(self, train_or_test, max_dataset_size=float("inf")):
-        """Initialize this dataset class.
-
-        Parameters:
-            opt (Option class) -- stores all the experiment flags; needs to be a subclass of BaseOptions
-        """
-        self.dir_A = os.path.join('../data', train_or_test + 'A')  # create a path '/path/to/data/trainA'
-        self.dir_B = os.path.join('../data', train_or_test + 'B')  # create a path '/path/to/data/trainB'
+        self.dir_A = os.path.join('.\\data', train_or_test + 'A')  # create a path '/path/to/data/trainA'
+        self.dir_B = os.path.join('.\\data', train_or_test + 'B')  # create a path '/path/to/data/trainB'
 
         self.A_paths = sorted(make_dataset(self.dir_A, max_dataset_size))   # load images from '/path/to/data/trainA'
         self.B_paths = sorted(make_dataset(self.dir_B, max_dataset_size))    # load images from '/path/to/data/trainB'
         self.A_size = len(self.A_paths)  # get the size of dataset A
         self.B_size = len(self.B_paths)  # get the size of dataset B
-        input_nc = 3       # get the number of channels of input image
-        output_nc = 3      # get the number of channels of output image
         self.transform_A = get_transform()
         self.transform_B = get_transform()
 
@@ -46,10 +78,9 @@ class UnalignedDataset:
             B_paths (str)    -- image paths
         """
         A_path = self.A_paths[index % self.A_size]  # make sure index is within then range
-        if self.opt.serial_batches:   # make sure index is within then range
-            index_B = index % self.B_size
-        else:   # randomize the index for domain B to avoid fixed pairs.
-            index_B = random.randint(0, self.B_size - 1)
+        # randomize the index for domain B to avoid fixed pairs.
+        index_B = random.randint(0, self.B_size - 1)
+
         B_path = self.B_paths[index_B]
         A_img = Image.open(A_path).convert('RGB')
         B_img = Image.open(B_path).convert('RGB')
