@@ -1,11 +1,11 @@
 opt = dict( load_size=286,          # scale images to this size
             crop_size=256,          # then crop to this size
             batch_size=1,           # input batch size
-            num_threads=4,          # treads for loading data
+            num_threads=1,          # treads for loading data
             gpu_ids=[0],            # id of gpu
             lambda_identity=0.5,    # use identity mapping. Setting lambda_identity other than 0 has an effect of scaling the weight of the identity mapping loss. For example, if the weight of the identity loss should be 10 times smaller than the weight of the reconstruction loss, please set lambda_identity = 0.1
-            lamda_A=10.0,           # weight for cycle loss (A -> B -> A)
-            lamda_B=10.0,           # weight for cycle loss (B -> A -> B)
+            lambda_A=10.0,           # weight for cycle loss (A -> B -> A)
+            lambda_B=10.0,           # weight for cycle loss (B -> A -> B)
             input_nc=3,
             output_nc=3,
             ngf=64,                 # of gen filters in the last conv layer
@@ -27,12 +27,17 @@ opt = dict( load_size=286,          # scale images to this size
             n_layers_D=3,           # only used if netD==n_layers
 
             epoch_count=1,
-            n_epochs=100,
-            n_epochs_decay=100,
+            n_epochs=25,
+            n_epochs_decay=25,
 
             continue_train=False,
             load_iter=0,
             epoch='latest',
             verbose=False,
-
+            print_freq=100,         # frequency of showing training results on console
+            display_freq=400,
+            update_html_freq=1000,  # frequency of saving training results to html
+            save_latest_freq=5000,
+            save_by_iter=False,
+            save_epoch_freq=5
            )
