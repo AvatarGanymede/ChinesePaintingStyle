@@ -1,4 +1,4 @@
-# CycleGan-for-Computer-Photographt
+# CycleGan-for-Computer-Photography
 A course project for Computer Photography class of Zhejiang University.
 
 #### The Results:
